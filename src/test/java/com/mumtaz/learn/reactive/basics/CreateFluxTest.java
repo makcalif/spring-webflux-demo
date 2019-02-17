@@ -6,6 +6,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.Arrays;
+
 public class CreateFluxTest {
 
     @Test
@@ -35,6 +37,18 @@ public class CreateFluxTest {
     @Test
     public void createFluxFromArray() {
         Flux flux = Flux.fromArray("I love to code".split(" "));
+        StepVerifier.create(flux)
+                .expectNext("I")
+                .expectNext("love")
+                .expectNext("to")
+                .expectNext("code")
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void createFluxFromIterable() {
+        Flux flux = Flux.fromIterable(Arrays.asList("I", "love", "to", "code"));
         StepVerifier.create(flux)
                 .expectNext("I")
                 .expectNext("love")
