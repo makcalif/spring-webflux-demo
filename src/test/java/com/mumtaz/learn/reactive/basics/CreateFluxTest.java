@@ -69,4 +69,14 @@ public class CreateFluxTest {
                 .expectComplete()
                 .verify();
     }
+
+    @Test
+    public void createFluxThatThrowsException() {
+        Flux begin = Flux.fromIterable(Arrays.asList("I", "love"));
+        Mono errorMono = Mono.error(new RuntimeException("Some business Exception"));
+        Flux end = Flux.fromIterable(Arrays.asList("to", "code"));
+
+        begin.concatWith(errorMono).concatWith(end)
+                .subscribe(System.out::println);
+    }
 }
