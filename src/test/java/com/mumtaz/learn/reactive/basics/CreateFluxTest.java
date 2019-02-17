@@ -31,4 +31,16 @@ public class CreateFluxTest {
                 .expectComplete()
                 .verify();
     }
+
+    @Test
+    public void createFluxFromArray() {
+        Flux flux = Flux.fromArray("I love to code".split(" "));
+        StepVerifier.create(flux)
+                .expectNext("I")
+                .expectNext("love")
+                .expectNext("to")
+                .expectNext("code")
+                .expectComplete()
+                .verify();
+    }
 }
