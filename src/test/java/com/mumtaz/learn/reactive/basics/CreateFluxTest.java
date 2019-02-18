@@ -1,6 +1,8 @@
 package com.mumtaz.learn.reactive.basics;
 
 
+import com.mumtaz.learn.reactive.domain.Address;
+import com.mumtaz.learn.reactive.domain.Person;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -85,6 +87,15 @@ public class CreateFluxTest {
                     },
                     () -> System.out.println("complete")
                 );
-    } 
+    }
 
+    @Test
+    public void testFlatMap() {
+        Person person1 = new Person("Eric", new Address("101",  "grand st"));
+        Person person2 = new Person("Brenda", new Address("4000",  "canyon st"));
+
+        Flux<Person> persons = Flux.fromIterable(Arrays.asList(person1, person2));
+        Flux<Address> addresses = persons.flatMap(person -> Mono.just(person.getAddress()));
+        addresses.subscribe(System.out::println);
+    }
 }
