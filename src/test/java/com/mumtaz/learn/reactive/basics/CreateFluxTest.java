@@ -10,6 +10,7 @@ import reactor.test.StepVerifier;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
 public class CreateFluxTest {
@@ -128,5 +129,15 @@ public class CreateFluxTest {
                 .map(a -> a.getT1() + "=" + a.getT2());
 
         StepVerifier.create(zipped).expectNext("A=1", "B=2", "C=3").verifyComplete();
+    }
+
+    @Test
+    public void testInfiniteFlux() {
+        Flux flux = Flux.generate(sink -> sink.next(getNextRandomr()));
+        flux.subscribe(System.out::println); 
+    }
+
+    private Integer getNextRandomr() {
+        return ThreadLocalRandom.current().nextInt(1, 100);
     }
 }
