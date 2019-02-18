@@ -2,6 +2,7 @@ package com.mumtaz.learn.reactive.basics;
 
 
 import com.mumtaz.learn.reactive.domain.Address;
+import com.mumtaz.learn.reactive.domain.Container;
 import com.mumtaz.learn.reactive.domain.Person;
 import org.junit.Test;
 import reactor.core.publisher.Flux;
@@ -11,6 +12,8 @@ import reactor.test.StepVerifier;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 public class CreateFluxTest {
@@ -134,10 +137,30 @@ public class CreateFluxTest {
     @Test
     public void testInfiniteFlux() {
         Flux flux = Flux.generate(sink -> sink.next(getNextRandomr()));
-        flux.subscribe(System.out::println); 
+        flux.subscribe(System.out::println);
     }
 
     private Integer getNextRandomr() {
         return ThreadLocalRandom.current().nextInt(1, 100);
+    }
+
+    @Test
+    public void testCollectValuesInContainerAndSetMaxBasedOnContainerList() {
+        Flux<Integer> numbers = Flux.range(1, 20);
+
+        Supplier<Container> containerSupplier = () -> {return new Container();};
+        BiConsumer<Container, Integer  > biConsumer = (c, i) ->  c.accumulate(i);
+
+        numbers.collect(containerSupplier, biConsumer)
+                .flatMap( combined -> {
+                    return Mono.justOrEmpty(combined.getList().stream().max(Integer::compareTo))
+                            .map(max -> {
+                                        combined.setMax(max);
+                                        return combined;
+                                    }
+                            );
+                })
+                .single()
+                .subscribe(System.out::println);
     }
 }
