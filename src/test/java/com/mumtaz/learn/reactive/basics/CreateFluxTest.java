@@ -103,14 +103,19 @@ public class CreateFluxTest {
 
     @Test
     public void testZip() throws InterruptedException {
-        Flux<Integer> flux = Flux.fromStream(IntStream.range(100, 200).boxed());
-        Flux delay = Flux.interval(Duration.ofSeconds(1));
+        Flux<Integer> flux = Flux.fromStream(IntStream.range(100, 200).boxed());  // 200 is excluded
+        Flux delay = Flux.interval(Duration.ofSeconds(5));
 
         flux.zipWith(delay, (t1, t2) -> {
             return t1;
-        })
-        .subscribe(System.out::println);
+        });
 
-        Thread.sleep(22000); 
+        StepVerifier.create(flux)
+                .expectNext(100)
+                .thenAwait(Duration.ofSeconds(5))
+                .thenConsumeWhile(val -> val <200)
+                .expectComplete()
+                .verify();
+
     }
 }
