@@ -163,4 +163,22 @@ public class CreateFluxTest {
                 .single()
                 .subscribe(System.out::println);
     }
+
+    @Test
+    public void testSingle() {
+        Flux flux = Flux.just("A", "B", "C");
+        Mono manyToSingle = flux
+            .flatMap( val -> {
+                if ("B".equals(val)) {
+                    return Flux.just("single");
+                }
+                return Flux.empty();
+            })
+            .single();
+
+        StepVerifier.create(manyToSingle)
+                .expectNext("single")
+                .expectComplete()
+                .verify();
+    }
 }
