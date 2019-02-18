@@ -71,12 +71,20 @@ public class CreateFluxTest {
     }
 
     @Test
-    public void createFluxThatThrowsException() {
-        Flux begin = Flux.fromIterable(Arrays.asList("I", "love"));
-        Mono errorMono = Mono.error(new RuntimeException("Some business Exception"));
-        Flux end = Flux.fromIterable(Arrays.asList("to", "code"));
+    public void testOnErrorContinue() {
 
-        begin.concatWith(errorMono).concatWith(end)
-                .subscribe(System.out::println);
-    }
+        Flux<String> flux = Flux.<String>fromIterable(Arrays.asList("1", "2", "a", "3", "4"));
+        flux.map(v -> Integer.parseInt(v))
+                .onErrorContinue( (err, sourceObj) -> {
+                    System.out.println( "intObj:" + sourceObj);  // this is "a"
+                    System.out.println( "logging error:" + err);
+                })
+                .subscribe(System.out::println,
+                    e -> {
+                        System.out.println("should not print out error here :" +e);
+                    },
+                    () -> System.out.println("complete")
+                );
+    } 
+
 }
