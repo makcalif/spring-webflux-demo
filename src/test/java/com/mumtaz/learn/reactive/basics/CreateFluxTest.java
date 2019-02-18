@@ -118,4 +118,15 @@ public class CreateFluxTest {
                 .verify();
 
     }
+
+    @Test
+    public void testAnotherZipCharsWithNumbers() {
+        Flux<String> firstNames = Flux.fromIterable(Arrays.asList("A", "B", "C"));
+        Flux<String> lastNames = Flux.fromIterable(Arrays.asList("1", "2", "3"));
+
+        Flux<String> zipped = Flux.zip(firstNames, lastNames)
+                .map(a -> a.getT1() + "=" + a.getT2());
+
+        StepVerifier.create(zipped).expectNext("A=1", "B=2", "C=3").verifyComplete();
+    }
 }
