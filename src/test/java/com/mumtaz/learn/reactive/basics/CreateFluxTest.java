@@ -8,7 +8,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.Duration;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 public class CreateFluxTest {
 
@@ -97,5 +99,18 @@ public class CreateFluxTest {
         Flux<Person> persons = Flux.fromIterable(Arrays.asList(person1, person2));
         Flux<Address> addresses = persons.flatMap(person -> Mono.just(person.getAddress()));
         addresses.subscribe(System.out::println);
+    }
+
+    @Test
+    public void testZip() throws InterruptedException {
+        Flux<Integer> flux = Flux.fromStream(IntStream.range(100, 200).boxed());
+        Flux delay = Flux.interval(Duration.ofSeconds(1));
+
+        flux.zipWith(delay, (t1, t2) -> {
+            return t1;
+        })
+        .subscribe(System.out::println);
+
+        Thread.sleep(22000); 
     }
 }
