@@ -4,11 +4,14 @@ import com.mumtaz.learn.reactive.domain.BestQuotationResponse;
 import com.mumtaz.learn.reactive.domain.Quotation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import javax.naming.ServiceUnavailableException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,6 +19,8 @@ import java.util.Optional;
 public class LoanRequestController {
 
     Logger logger = LoggerFactory.getLogger(LoanRequestController.class);
+    private static final Quotation QUOTATION_IN_CASE_OF_ERROR = new Quotation("bank-error", Double.MAX_VALUE);
+    private static final Quotation QUOTATION_IN_CASE_OF_TIMEOUT = new Quotation("timeout", Double.MAX_VALUE);
 
     @GetMapping("/{bank}/quotation") // bank name format is bank-[1-9]
     public Mono<Quotation> quotation (final @PathVariable("bank") String bank,
@@ -26,14 +31,14 @@ public class LoanRequestController {
         double interestRate =  ((double) bankIndex) / 100d;
         logger.info("interest rate for bank {} is {}", bank, interestRate);
 
-//        if (bankIndex == '2') {
-//            return Mono.error(new ServiceUnavailableException("bank-" + bankIndex + " service is unavailable"));
-//        }
-//
-//        if (bankIndex == '3') {
-//            return Mono.delay(Duration.ofMillis(4000))
-//                    .then(Mono.just(new Quotation("Bank-" + bankIndex, loanAmount)));
-//        }
+        if (bankIndex == '2') {
+            return Mono.error(new ServiceUnavailableException("bank-" + bankIndex + " service is unavailable"));
+        }
+
+        if (bankIndex == '3') {
+            return Mono.delay(Duration.ofMillis(4000))
+                    .then(Mono.just(new Quotation("Bank-" + bankIndex, loanAmount)));
+        }
 
         return Mono.just(new Quotation("Bank-" + bankIndex, loanAmount * interestRate));
     }
@@ -45,8 +50,16 @@ public class LoanRequestController {
 
         return Flux.from(banksUrl)
                 .flatMap(bankUrl -> {
-                    Mono<Quotation> mq = requestForQuotation(bankUrl, loanAmount);  // scatter
+                    Mono<Quotation> mq = requestForQuotation(bankUrl, loanAmount)  // scatter
+                            .onErrorResume(e -> {
+                                logger.error(banksUrl + " errored out. Error message " + e.getMessage());
+                                return Mono.just(QUOTATION_IN_CASE_OF_ERROR);
+                            });
                     return mq;
+                })
+                .filter(offer -> {
+                    return ! ( offer.equals(QUOTATION_IN_CASE_OF_ERROR)  ||
+                            offer.equals(QUOTATION_IN_CASE_OF_TIMEOUT));
                 })
                 .collect(() -> new BestQuotationResponse(loanAmount), BestQuotationResponse::offer) // gather
                 .doOnSuccess(BestQuotationResponse::finish)
@@ -76,6 +89,13 @@ public class LoanRequestController {
                         .queryParam("loanAmount", loanAmount)
                         .build())
                 .retrieve()
-                .bodyToMono(Quotation.class);
+                //Note that Unlike retrieve() method, the exchange() method does not throw exceptions
+                // in case of 4xx or 5xx responses. You need to check the status codes yourself and handle
+                // them in the way you want to.
+                .onStatus(HttpStatus::is5xxServerError , clientResponse -> {
+                    return clientResponse.bodyToMono(String.class).map(body -> new RuntimeException(body));
+                })
+                .bodyToMono(Quotation.class)
+                .timeout(Duration.ofSeconds(3),  Mono.just(QUOTATION_IN_CASE_OF_TIMEOUT));
     }
 }
