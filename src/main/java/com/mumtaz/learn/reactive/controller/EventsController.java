@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -17,7 +18,10 @@ public class EventsController {
     @GetMapping(name = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<Event> getUnlimitedEvents () {
         Flux events = Flux.generate(sink -> sink.next(getNextEvent()));
-        return events;
+        Flux<Event> eventsWithDelay =
+                events.zipWith(Flux.interval(Duration.ofSeconds(2)),
+                        (event, delay) -> event);
+        return eventsWithDelay;
     }
 
     private Event getNextEvent() {
