@@ -1,5 +1,6 @@
 package com.mumtaz.learn.reactive.service;
 
+import com.mumtaz.learn.reactive.domain.User;
 import com.mumtaz.learn.reactive.subscriber.CustomBackpressureSubscriber;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -13,7 +14,7 @@ public class BackPressureDemoClient {
 
     public BackPressureDemoClient(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder.defaultHeader(HttpHeaders.ACCEPT, MediaType.TEXT_EVENT_STREAM_VALUE)
-                .baseUrl("http://localhost:8080/getInfinite")
+                .baseUrl("http://localhost:8080/users")
                 .build();
 
     }
@@ -24,7 +25,7 @@ public class BackPressureDemoClient {
 
         this.webClient.get()
                 .retrieve()
-                .bodyToFlux(String.class)
+                .bodyToFlux(User.class)
                 .subscribe(myCustomBackpressureSubscriber);
     }
 }

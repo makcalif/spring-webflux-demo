@@ -19,7 +19,12 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -33,6 +38,9 @@ public class SpringWebFluxDemo {
     CommandLineRunner populateUserRepo(UserRepository userRepository) throws Exception{
         System.out.println("adding users to mongo db");
 
+        Flux<User> fluxUsers = Flux.generate(sink -> sink.next(getRandomUser()));
+		//List<User> users = Arrays.asList(new User()) ;
+        //Flux<User> fluxUsers = Flux.fromIterable(users).zipWith(Flux.interval(Duration.ofSeconds(2)), (a,b) -> a);
         createMongoRepo();
         return args -> {
             userRepository.deleteAll().subscribe(
@@ -42,10 +50,27 @@ public class SpringWebFluxDemo {
                             .map(name -> new User(UUID.randomUUID().toString(), name))
                             .forEach( u -> userRepository.save(u)
                                     .map(v -> "write: " + v)
-                                    .subscribe(System.out::println))
+                                    .subscribe(System.out::println)
+
+							)
+
             );
+
+//			fluxUsers.subscribe(System.out::println);
+			userRepository.saveAll(fluxUsers).subscribe(System.out::println);
         };
+
+
     }
+
+    private User getRandomUser() {
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		return new User(UUID.randomUUID().toString(), "random");
+	}
 
 	private void createMongoRepo() throws Exception {
 		MongodStarter mongodStarter = MongodStarter.getDefaultInstance();
@@ -70,7 +95,7 @@ public class SpringWebFluxDemo {
 			db.createCollection("user", createCollectionOptions);
 			db.getCollection("user");
 
-			mongo.close();
+			//mongo.close();
 		}
 		catch (Exception e) {
 			e.printStackTrace();
