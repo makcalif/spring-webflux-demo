@@ -1,6 +1,7 @@
 package com.mumtaz.learn.reactive.basics;
 
 import com.mumtaz.learn.reactive.domain.Quotation;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -33,6 +34,7 @@ public class BlockingVsNonBlockingTest {
     }
 
     @Test
+    @Ignore
     public void testBlocking() throws InterruptedException {
 
         RestTemplate restTemplate = new RestTemplate();
